@@ -31,6 +31,24 @@ DownloadStatus = Union[Literal["V"], Literal["F"], Literal["K"]]
 
 
 @dataclass
+class NoopDatabase:
+    def insert_movies(self, movies: Iterable[FilmlistenEintrag]) -> None:
+        """
+        Iteriere über Eingabeiterator
+
+        Diese Funktion konsumiert den Eingabeiterator vollständig, macht aber
+        ansonsten nichts.
+
+        Side Effects:
+        -------------
+        Ein übergebener Generator wird verbraucht.
+        """
+        for _ in movies:
+            pass
+        return
+
+
+@dataclass
 class FilmDB:
     """Datenbank aller Filme"""
 
