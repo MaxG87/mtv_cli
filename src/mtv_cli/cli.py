@@ -11,14 +11,11 @@ from __future__ import annotations
 
 import configparser
 import datetime as dt
-import lzma
 import re
 import sys
-import urllib.request as request
 from pathlib import Path
 from typing import Any, Iterable, Optional, TextIO
 
-import ijson  # type: ignore[import]
 import typer
 from loguru import logger
 from pick import pick
@@ -36,6 +33,9 @@ from mtv_cli.constants import (
 from mtv_cli.content_retrieval import (
     FilmDownloadFehlerhaft,
     LowMemoryFileSystemDownloader,
+    extract_entries_from_filmliste,
+    get_lzma_fp,
+    get_url_fp,
 )
 from mtv_cli.film import FilmlistenEintrag, MovieQuality
 from mtv_cli.film_filter import AgeDurationFilter
@@ -84,43 +84,6 @@ def load_configuration(config_f: Path) -> dict[str, Any]:
 
 class Options:
     pass
-
-
-def get_url_fp(url):
-    """URL öffnen und Filepointer zurückgeben"""
-    return request.urlopen(url)
-
-
-def get_lzma_fp(url_fp) -> TextIO:
-    """Filepointer des LZMA-Entpackers. Argument ist der FP der URL"""
-    ret: TextIO = lzma.open(url_fp, "rt", encoding="utf-8")
-    return ret
-
-
-def extract_entries_from_filmliste(fh: TextIO) -> Iterable[FilmlistenEintrag]:
-    """
-    Extrahiere einzelne Einträge aus MediathekViews Filmliste
-
-    Diese Funktion nimmt eine IO-Objekt und extrahiert aus diesem einzelne
-    Filmeinträge. Es wird darauf geachtet, dabei möglichst sparsam mit dem
-    Arbeitsspeicher umzugehen.
-    """
-    stream = ijson.parse(fh)
-    start_item = ("X", "start_array", None)
-    end_item = ("X", "end_array", None)
-    entry_has_started = False
-    last_entry: Optional[FilmlistenEintrag] = None
-    for cur_item in stream:
-        if cur_item == start_item:
-            raw_entry: list[str] = []
-            entry_has_started = True
-        elif cur_item == end_item:
-            entry_has_started = False
-            cur_entry = FilmlistenEintrag.from_item_list(raw_entry).update(last_entry)
-            last_entry = cur_entry
-            yield cur_entry
-        elif entry_has_started:
-            raw_entry.append(cur_item[-1])
 
 
 @app.command()
