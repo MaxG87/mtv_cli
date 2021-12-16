@@ -82,6 +82,33 @@ class FilmDB:
       _id text primary key )"""
         )
 
+    def insert_movies(self, movies: Iterable[FilmlistenEintrag]) -> None:
+        """
+        Filme in Iterable zur Datenbank hinzufügen
+
+        Es ist gut möglich, dass `movies` nicht in den Arbeitsspeicher passt.
+        Gerade auf Raspberry-Geräten ist dies der Fall.
+
+        Parameters:
+        -----------
+        movies: Lazy Stream von FilmlistenEintrag
+
+        Returns:
+        --------
+        None
+
+        Side Effects:
+        -------------
+        Verändert die Datenbank in self.dbfile.
+        """
+        self.create_filmtable()
+        self.cursor.execute("BEGIN;")
+        for entry in movies:
+            logger.debug(f"Füge Eintrag zur Filmdatenbank hinzu: {entry}")
+            self.insert_film(entry)
+        self.commit()
+        self.save_filmtable()
+
     def insert_film(self, film: FilmlistenEintrag) -> None:
         """Satz zur Datenbank hinzufügen"""
         INSERT_STMT = f"INSERT INTO {self.filmdb} VALUES (" + 20 * "?," + "?)"

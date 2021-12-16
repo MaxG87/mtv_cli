@@ -137,25 +137,17 @@ def aktualisiere_filmliste(
     # TODO: Führe UpdateSource als ContextManager ein
     cfg = load_configuration(config)
     setup_logging(log_level, cfg)
-
-    fh = get_update_source_file_handle(quelle)
-    entry_candidates = extract_entries_from_filmliste(fh)
-
-    filmDB = FilmDB(dbfile)
     film_filter = AgeDurationFilter(
         max_age=cfg["MAX_ALTER"],
         min_duration=cfg["MIN_DAUER"],
     )
-    filmDB.create_filmtable()
-    filmDB.cursor.execute("BEGIN;")
-    for entry in entry_candidates:
-        if film_filter.is_permitted(entry):
-            logger.debug(f"Füge Eintrag zur Filmdatenbank hinzu: {entry}")
-            filmDB.insert_film(entry)
-    filmDB.commit()
-    filmDB.save_filmtable()
 
-    fh.close()
+    fh = get_update_source_file_handle(quelle)
+    all_movies = extract_entries_from_filmliste(fh)
+    relevant_movies = (movie for movie in all_movies if film_filter.is_permitted(movie))
+
+    filmDB = FilmDB(dbfile)
+    filmDB.insert_movies(relevant_movies)
 
 
 def get_update_source_file_handle(update_source: str) -> TextIO:
