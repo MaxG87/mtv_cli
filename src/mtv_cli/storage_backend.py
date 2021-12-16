@@ -100,6 +100,7 @@ class FilmDB:
         Side Effects:
         -------------
         Verändert die Datenbank in self.dbfile.
+        Ein übergebener Generator wird verbraucht.
         """
         self.create_filmtable()
         self.cursor.execute("BEGIN;")
