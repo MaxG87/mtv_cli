@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import ijson
 import typer
 
 from mtv_cli.content_retrieval import extract_entries_from_filmliste, get_lzma_fp
@@ -11,8 +12,8 @@ app = typer.Typer()
 @app.command()
 def insert_to_noop_db(filmliste: Path) -> None:
     database = NoopDatabase()
-    zipped = get_lzma_fp(filmliste)
-    all_movies = extract_entries_from_filmliste(zipped)
+    unzipped = get_lzma_fp(filmliste)
+    all_movies = extract_entries_from_filmliste(unzipped)
     database.insert_movies(all_movies)
 
 
@@ -20,6 +21,14 @@ def insert_to_noop_db(filmliste: Path) -> None:
 def iterate_over_lzma_stream(filmliste: Path) -> None:
     zipped = get_lzma_fp(filmliste)
     for _ in zipped:
+        pass
+
+
+@app.command()
+def unpack_and_ijson(filmliste: Path) -> None:
+    unzipped = get_lzma_fp(filmliste)
+    stream = ijson.parse(unzipped)
+    for enrty in stream:
         pass
 
 
