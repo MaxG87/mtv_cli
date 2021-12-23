@@ -18,7 +18,7 @@ import requests
 from loguru import logger
 from pydantic import BaseModel
 
-from mtv_cli.film import FilmlistenEintrag, MovieQuality
+from mtv_cli.film import Movie, MovieQuality
 
 
 class FilmDownloadFehlerhaft(RuntimeError):
@@ -30,7 +30,7 @@ class LowMemoryFileSystemDownloader(BaseModel):
     quality: MovieQuality
     chunk_size: int = 1024 * 1024  # 1 MiB
 
-    def get_filename(self, film: FilmlistenEintrag) -> Path:
+    def get_filename(self, film: Movie) -> Path:
         # Infos zusammensuchen
         _, url = film.get_url(self.quality)
         thema = film.thema.replace("/", "_")
@@ -39,7 +39,7 @@ class LowMemoryFileSystemDownloader(BaseModel):
         fname = self.root / f"{film.sender}_{film.datum}_{thema}_{titel}.{ext}"
         return fname
 
-    def download_film(self, film: FilmlistenEintrag) -> None:
+    def download_film(self, film: Movie) -> None:
         """Download eines einzelnen Films"""
         real_quality, url = film.get_url(self.quality)
         if real_quality != self.quality:
@@ -70,7 +70,7 @@ def get_lzma_fp(url_fp) -> TextIO:
     return ret
 
 
-def extract_entries_from_filmliste(fh: TextIO) -> Iterable[FilmlistenEintrag]:
+def extract_entries_from_filmliste(fh: TextIO) -> Iterable[Movie]:
     """
     Extrahiere einzelne Einträge aus MediathekViews Filmliste
 
@@ -82,14 +82,14 @@ def extract_entries_from_filmliste(fh: TextIO) -> Iterable[FilmlistenEintrag]:
     start_item = ("X", "start_array", None)
     end_item = ("X", "end_array", None)
     entry_has_started = False
-    last_entry: Optional[FilmlistenEintrag] = None
+    last_entry: Optional[Movie] = None
     for cur_item in stream:
         if cur_item == start_item:
             raw_entry: list[str] = []
             entry_has_started = True
         elif cur_item == end_item:
             entry_has_started = False
-            cur_entry = FilmlistenEintrag.from_item_list(raw_entry).update(last_entry)
+            cur_entry = Movie.from_item_list(raw_entry).update(last_entry)
             last_entry = cur_entry
             yield cur_entry
         elif entry_has_started:

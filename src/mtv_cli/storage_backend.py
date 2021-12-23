@@ -21,7 +21,7 @@ from typing import Iterable, Literal, Optional, Union
 
 from loguru import logger
 
-from mtv_cli.film import FilmlistenEintrag
+from mtv_cli.film import Movie
 
 # Bedeutung der Status-Codes:
 # V - Vorgemerkt
@@ -32,7 +32,7 @@ DownloadStatus = Union[Literal["V"], Literal["F"], Literal["K"]]
 
 @dataclass
 class NoopDatabase:
-    def insert_movies(self, movies: Iterable[FilmlistenEintrag]) -> None:
+    def insert_movies(self, movies: Iterable[Movie]) -> None:
         """
         Iteriere über Eingabeiterator
 
@@ -100,7 +100,7 @@ class FilmDB:
       _id text primary key )"""
         )
 
-    def insert_movies(self, movies: Iterable[FilmlistenEintrag]) -> None:
+    def insert_movies(self, movies: Iterable[Movie]) -> None:
         """
         Filme in Iterable zur Datenbank hinzufügen
 
@@ -109,7 +109,7 @@ class FilmDB:
 
         Parameters:
         -----------
-        movies: Lazy Stream von FilmlistenEintrag
+        movies: Lazy Stream von Movie
 
         Returns:
         --------
@@ -128,7 +128,7 @@ class FilmDB:
         self.commit()
         self.save_filmtable()
 
-    def insert_film(self, film: FilmlistenEintrag) -> None:
+    def insert_film(self, film: Movie) -> None:
         """Satz zur Datenbank hinzufügen"""
         INSERT_STMT = f"INSERT INTO {self.filmdb} VALUES (" + 20 * "?," + "?)"
         as_dict = film.dict()
@@ -240,7 +240,7 @@ class FilmDB:
         logger.debug("SQL-Where: %s" % where_clause)
         return f"SELECT * FROM {self.filmdb} WHERE {where_clause}"
 
-    def finde_filme(self, criteria: list[str]) -> Iterable[FilmlistenEintrag]:
+    def finde_filme(self, criteria: list[str]) -> Iterable[Movie]:
         """Finde alle Filme, die auf Suchkriterium passen"""
 
         query = self.get_query(criteria)
@@ -258,13 +258,11 @@ class FilmDB:
             else:
                 logger.info("Dauer ist None")
             as_dict["neu"] = bool(as_dict["neu"])
-            film = FilmlistenEintrag.parse_obj(as_dict)
+            film = Movie.parse_obj(as_dict)
             yield film
         self.close()
 
-    def save_downloads(
-        self, filme: list[FilmlistenEintrag], status=DownloadStatus
-    ) -> int:
+    def save_downloads(self, filme: list[Movie], status=DownloadStatus) -> int:
         """Downloads sichern."""
 
         CREATE_STMT = f"""CREATE TABLE IF NOT EXISTS {self.downloadsdb} (
@@ -295,7 +293,7 @@ class FilmDB:
         self.close()
         return changes
 
-    def delete_downloads(self, filme: list[FilmlistenEintrag]) -> int:
+    def delete_downloads(self, filme: list[Movie]) -> int:
         """Downloads löschen"""
         DEL_STMT = f"DELETE FROM {self.downloadsdb} where _id=?"
 
@@ -307,7 +305,7 @@ class FilmDB:
         self.close()
         return n_changes
 
-    def update_downloads(self, film: FilmlistenEintrag, status: DownloadStatus):
+    def update_downloads(self, film: Movie, status: DownloadStatus):
         """Status eines Satzes ändern"""
         UPD_STMT = f"UPDATE {self.downloadsdb} SET status=?,DatumStatus=? where _id=?"
         film_id = self.get_film_id(film)
@@ -319,7 +317,7 @@ class FilmDB:
 
     def read_downloads(
         self, status: list[DownloadStatus] = ["V", "F", "K"]
-    ) -> Iterable[tuple[FilmlistenEintrag, DownloadStatus, dt.date]]:
+    ) -> Iterable[tuple[Movie, DownloadStatus, dt.date]]:
         """Zum Download vorgemerkte Filme auslesen"""
 
         status_query_str = ",".join(f"'{cur}'" for cur in status)
@@ -339,7 +337,7 @@ class FilmDB:
         for row in rows:
             cur_status: DownloadStatus = row["status"]
             datumstatus: dt.date = row["DatumStatus"]
-            yield FilmlistenEintrag.from_database_row(row), cur_status, datumstatus
+            yield Movie.from_database_row(row), cur_status, datumstatus
 
     def save_status(self, key, text=None):
         """Status in Status-Tabelle speichern"""
@@ -467,7 +465,7 @@ class FilmDB:
         return rows
 
     @staticmethod
-    def get_film_id(film: FilmlistenEintrag) -> str:
+    def get_film_id(film: Movie) -> str:
         datum = "" if film.datum is None else film.datum.isoformat()
         zeit = "" if film.zeit is None else film.zeit.isoformat()
         id_str = ",".join([film.sender, film.thema, film.titel, datum, zeit, film.url])

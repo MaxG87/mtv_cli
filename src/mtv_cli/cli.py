@@ -37,7 +37,7 @@ from mtv_cli.content_retrieval import (
     get_lzma_fp,
     get_url_fp,
 )
-from mtv_cli.film import FilmlistenEintrag, MovieQuality
+from mtv_cli.film import Movie, MovieQuality
 from mtv_cli.film_filter import AgeDurationFilter
 from mtv_cli.storage_backend import DownloadStatus, FilmDB
 
@@ -165,7 +165,7 @@ def get_suche() -> Iterable[str]:
                 yield token[0].strip() + ":" + token[1]
 
 
-def get_select(filme: list[FilmlistenEintrag]) -> Iterable[str]:
+def get_select(filme: list[Movie]) -> Iterable[str]:
     for film in filme:
         sender = film.sender
         thema = film.thema
@@ -175,16 +175,14 @@ def get_select(filme: list[FilmlistenEintrag]) -> Iterable[str]:
         yield SEL_FORMAT.format(sender, thema, datum, dauer, titel)
 
 
-def filme_suchen(
-    query: Optional[list[str]], filmDB: FilmDB
-) -> Iterable[FilmlistenEintrag]:
+def filme_suchen(query: Optional[list[str]], filmDB: FilmDB) -> Iterable[Movie]:
     """Filme gemäß Vorgabe suchen"""
     if query is None:
         query = list(get_suche())
     return filmDB.finde_filme(query)
 
 
-def zeige_liste(filme: list[FilmlistenEintrag]) -> list[tuple[str, int]]:
+def zeige_liste(filme: list[Movie]) -> list[tuple[str, int]]:
     """Filmliste anzeigen, Auswahl zurückgeben"""
     title = f"  {SEL_TITEL}"
     preselection = list(get_select(filme))
@@ -237,7 +235,7 @@ def sofort_herunterladen(
 
 def select_movies_for_download(
     query: Optional[list[str]], do_batch: bool, filmDB: FilmDB
-) -> Iterable[FilmlistenEintrag]:
+) -> Iterable[Movie]:
     filme = list(filme_suchen(query, filmDB))
     if len(filme) == 0:
         logger.info("Keine Suchtreffer")
@@ -321,9 +319,7 @@ def entferne_filmvormerkungen(
     options = load_configuration(config)
     setup_logging(log_level, options)
 
-    def format_download_row(
-        arg: tuple[FilmlistenEintrag, DownloadStatus, dt.date]
-    ) -> str:
+    def format_download_row(arg: tuple[Movie, DownloadStatus, dt.date]) -> str:
         film, status, datumstatus = arg
         return DLL_FORMAT.format(
             status,
