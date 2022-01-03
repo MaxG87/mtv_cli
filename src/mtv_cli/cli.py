@@ -21,8 +21,6 @@ from loguru import logger
 from pick import pick
 
 from mtv_cli.constants import (
-    DLL_FORMAT,
-    DLL_TITEL,
     FILME_SQLITE,
     MTV_CLI_CONFIG,
     MTV_CLI_HOME,
@@ -319,16 +317,41 @@ def entferne_filmvormerkungen(
     options = load_configuration(config)
     setup_logging(log_level, options)
 
+    # Syntax Reminder: {keyword:minimum length:maximum length}
+    DLL_FORMAT = "|".join(
+        [
+            "{status:1.1}",
+            "{datumstatus:8.8}",
+            "{sender:7.7}",
+            "{thema:8.8}",
+            "{sendedatum:8.8}",
+            "{dauer:4}",
+            "{titel:58.58}",
+        ]
+    )
+    DLL_TITEL = ("St" + DLL_FORMAT).format(
+        status="a",
+        datumstatus="S-Datum",
+        sender="Sender",
+        thema="Thema",
+        sendedatum="Datum",
+        dauer="Dauer",
+        titel="Titel",
+    )
+
     def format_download_row(arg: tuple[Movie, DownloadStatus, dt.date]) -> str:
         film, status, datumstatus = arg
+        sendedatum = (
+            "Unbekannt" if film.datum is None else film.datum.strftime("%d.%m.%y")
+        )
         return DLL_FORMAT.format(
-            status,
-            datumstatus.strftime("%d.%m.%y"),
-            film.sender,
-            film.thema,
-            "Unbekannt" if film.datum is None else film.datum.strftime("%d.%m.%y"),
-            film.dauer_as_minutes(),
-            film.titel,
+            status=status,
+            datumstatus=datumstatus.strftime("%d.%m.%y"),
+            sender=film.sender,
+            thema=film.thema,
+            sendedatum=sendedatum,
+            dauer=film.dauer_as_minutes(),
+            titel=film.titel,
         )
 
     # Liste lesen
