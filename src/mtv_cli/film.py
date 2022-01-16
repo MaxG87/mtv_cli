@@ -22,7 +22,7 @@ class MovieQuality(str, Enum):
     LOW = "LOW"
 
 
-class Movie(BaseModel):
+class MovieListItem(BaseModel):
     # TODO: Datum+Zeit zu Sendezeit zusammenfassen; DatumL ganz durch Sendezeit ersetzen
     sender: str
     thema: str
@@ -49,7 +49,7 @@ class Movie(BaseModel):
         allow_mutation = False
 
     @classmethod
-    def from_item_list(cls, raw_entry: list[str]) -> Movie:
+    def from_item_list(cls, raw_entry: list[str]) -> MovieListItem:
         datum = (
             None
             if raw_entry[3] == ""
@@ -66,7 +66,7 @@ class Movie(BaseModel):
             else dt.datetime.strptime(raw_entry[5], "%H:%M:%S")
         )
         dauer = None if dauer_raw is None else dauer_raw - dt.datetime(1900, 1, 1)
-        return Movie(
+        return MovieListItem(
             sender=raw_entry[0],
             thema=raw_entry[1],
             titel=raw_entry[2],
@@ -90,8 +90,8 @@ class Movie(BaseModel):
         )
 
     @classmethod
-    def from_database_row(cls, row: Row) -> Movie:
-        return Movie(
+    def from_database_row(cls, row: Row) -> MovieListItem:
+        return MovieListItem(
             sender=row[0],
             thema=row[1],
             titel=row[2],
@@ -114,7 +114,7 @@ class Movie(BaseModel):
             neu=row[19],
         )
 
-    def update(self, entry: Optional[Movie]) -> Movie:
+    def update(self, entry: Optional[MovieListItem]) -> MovieListItem:
         """
         Übernimm die Felder Sender und Thema, falls nötig
 

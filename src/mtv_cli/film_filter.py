@@ -4,7 +4,7 @@ from typing import Optional, Protocol
 
 from pydantic import BaseModel, Field
 
-from mtv_cli.film import Movie
+from mtv_cli.film import MovieListItem
 
 MINUTES_T = int
 DAYS_T = int
@@ -16,7 +16,7 @@ class FilmMissesDateError(ValueError):
 
 
 class FilmFilter(Protocol):
-    def is_permitted(self, film: Movie) -> bool:
+    def is_permitted(self, film: MovieListItem) -> bool:
         pass
 
 
@@ -38,7 +38,7 @@ class AgeFilter(BaseModel):
     max_age: Optional[DAYS_T] = None
     today: dt.date = Field(default_factory=dt.date.today)
 
-    def is_permitted(self, film: Movie) -> bool:
+    def is_permitted(self, film: MovieListItem) -> bool:
         if film.datum is None:
             # Film kann nicht verworfen werden, da Informationen fehlen.
             return True
@@ -52,14 +52,14 @@ class DurationFilter(BaseModel):
     min_duration: MINUTES_T = 0
     max_duration: Optional[MINUTES_T] = None
 
-    def is_permitted(self, film: Movie) -> bool:
+    def is_permitted(self, film: MovieListItem) -> bool:
         duration = film.dauer_as_minutes()
         max_duration = duration if self.max_duration is None else self.max_duration
         return self.min_duration <= duration <= max_duration
 
 
 class HasDateFilter(BaseModel):
-    def is_permitted(self, film: Movie) -> bool:
+    def is_permitted(self, film: MovieListItem) -> bool:
         return film.datum is not None
 
 
