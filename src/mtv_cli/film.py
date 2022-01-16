@@ -9,11 +9,10 @@
 from __future__ import annotations
 
 import datetime as dt
+from dataclasses import asdict, dataclass
 from enum import Enum
 from sqlite3 import Row
 from typing import Optional
-
-from pydantic import BaseModel
 
 
 class MovieQuality(str, Enum):
@@ -22,8 +21,8 @@ class MovieQuality(str, Enum):
     LOW = "LOW"
 
 
-class MovieListItem(BaseModel):
-    # TODO: Datum+Zeit zu Sendezeit zusammenfassen; DatumL ganz durch Sendezeit ersetzen
+@dataclass(frozen=True)
+class MovieListItem:
     sender: str
     thema: str
     titel: str
@@ -123,10 +122,10 @@ class MovieListItem(BaseModel):
         """
         if entry is None:
             return self
-        new = self.dict()
+        new = asdict(self)
         for attr in "sender", "thema":
             if not new[attr]:
-                new[attr] = entry.dict()[attr]
+                new[attr] = asdict(entry)[attr]
         return type(self)(**new)
 
     def dauer_as_minutes(self) -> int:
