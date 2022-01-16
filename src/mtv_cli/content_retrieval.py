@@ -51,7 +51,10 @@ class LowMemoryFileSystemDownloader(BaseModel):
         try:
             response.raise_for_status()
             with self.get_filename(film).open("wb") as fh:
-                for chunk in response.iter_content(chunk_size=self.chunk_size):
+                for n, chunk in enumerate(
+                    response.iter_content(chunk_size=self.chunk_size)
+                ):
+                    logger.debug(f"Verarbeite Chunk {n} der Größe {len(chunk)}.")
                     fh.write(chunk)
         except requests.HTTPError as http_err:
             logger.error(f"Download des Films {film} ist fehlgeschlagen!")
