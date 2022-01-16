@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mtv-cli"
-version = "0.2.0"
+version = "0.3.0"
 description = "MediathekView für die Kommandozeile"
 authors = ["Max Görner <5477952+MaxG87@users.noreply.github.com>"]
 license = "GPL-3.0-only"
